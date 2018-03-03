@@ -3,6 +3,8 @@ const models = require('../models');
 
 // get the Cat model
 const Cat = models.Cat.CatModel;
+// get the Dog model
+const Dog = models.Dog.DogModel;
 
 // default fake data so that we have something to work with until we make a real Cat
 const defaultData = {
@@ -161,7 +163,7 @@ const setName = (req, res) => {
   });
 
   // if error, return it
-  savePromise.catch((err) => res.json({ err }));
+  savePromise.catch(err => res.json({ err }));
 
   return res;
 };
@@ -229,7 +231,89 @@ const updateLast = (req, res) => {
   savePromise.then(() => res.json({ name: lastAdded.name, beds: lastAdded.bedsOwned }));
 
   // if save error, just return an error for now
-  savePromise.catch((err) => res.json({ err }));
+  savePromise.catch(err => res.json({ err }));
+};
+
+// function to handle a request to add or update a dog in the database
+// controller functions in Express receive the full HTTP request
+// and get a pre-filled out response object to send
+// ADDITIONALLY, with body-parser we will get the
+// body/form/POST data in the request as req.body
+const addDog = (req, res) => {
+  // check if the required fields exist
+  // normally you would also perform validation
+  // to know if the data they sent you was real
+  if (!req.body.dogname || !req.body.breed || !req.body.age) {
+    // if not respond with a 400 error
+    // (either through json or a web page depending on the client dev)
+    return res.status(400).json({ error: 'name, breed, age are all required' });
+  }
+
+  // dummy JSON to insert into database
+  const dogData = {
+    name: req.body.dogname,
+    breed: req.body.breed,
+    age: req.body.age,
+  };
+
+  // create a new object of CatModel with the object to save
+  const newDog = new Dog(dogData);
+
+  // create new save promise for the database
+  const savePromise = newDog.save();
+
+  savePromise.then(() => {
+    // set the lastAdded obj to our newest dog object.
+    // This way we can update it dynamically
+    // lastAdded = newDog;
+
+    // return success
+    res.json({ name: newDog.name, breed: newDog.breed, age: newDog.age });
+  });
+
+  // if error, return it
+  savePromise.catch(err => res.json({ err }));
+
+  return res;
+};
+
+// function to search for a dog and try to update it (increase age by 1)
+// return an error if the dog isn't listed
+const updateDog = (req, res) => {
+  // checks if there is query parameter named name,
+  // if not throws an error
+  if (!req.body.name) {
+    return res.json({ error: 'Name is required to perform a search' });
+  }
+
+  // Call our Dog's static findByName function.
+  return Dog.findByName(req.body.name, (err, doc) => {
+    // errs, handle them
+    if (err) {
+      return res.json({ err }); // if error, return it
+    }
+
+    // if no matches, let them know
+    // (does not necessarily have to be an error since technically it worked correctly)
+    if (!doc) {
+      return res.json({ error: 'Cannot update dog: does not exist.' });
+    }
+
+    // updates (existing) dog
+    const temp = doc;
+    temp.age++;
+
+    // create a save promise, so that Mongo updates the database when it gets to it
+    const savePromise = temp.save();
+
+    // when the code is saved run the following
+    savePromise.then(() => res.json({ name: temp.name, breed: temp.breed, age: temp.age }));
+
+    // if an error is encountered ... send it to the user!?
+    savePromise.catch(e => res.json({ e }));
+
+    return temp;
+  });
 };
 
 // function to handle a request to any non-real resources (404)
@@ -258,5 +342,7 @@ module.exports = {
   setName,
   updateLast,
   searchName,
+  addDog,
+  updateDog,
   notFound,
 };

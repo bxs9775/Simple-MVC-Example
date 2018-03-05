@@ -45,6 +45,13 @@ const readAllCats = (req, res, callback) => {
   Cat.find(callback);
 };
 
+// function to find all dogss on request.
+// Express functions always receive the request and the response.
+// Based on find all cats...
+const readAllDogs = (req, res, callback) => {
+  Dog.find(callback);
+};
+
 
 // function to find a specific cat on request.
 // Express functions always receive the request and the response.
@@ -114,6 +121,22 @@ const hostPage3 = (req, res) => {
   res.render('page3');
 };
 
+// function to handle requests to the page3 page
+// controller functions in Express receive the full HTTP request
+// and a pre-filled out response object to send
+const hostPage4 = (req, res) => {
+  const callback = (err, docs) => {
+    if (err) {
+      return res.json({ err }); // returns error to user
+      // usually it is bad practice to expose internal data to users
+      // but this is a code exercise
+    }
+
+    return res.render('page4', { dogs: docs });
+  };
+
+  readAllDogs(req, res, callback);
+};
 // function to handle get request to send the name
 // controller functions in Express receive the full HTTP request
 // and a pre-filled out response object to send
@@ -337,6 +360,7 @@ module.exports = {
   page1: hostPage1,
   page2: hostPage2,
   page3: hostPage3,
+  page4: hostPage4,
   readCat,
   getName,
   setName,
